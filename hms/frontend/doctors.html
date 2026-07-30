@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Doctors · MediCore HMS</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0B1F2E; --ink-2:#122E42; --teal:#0E8074; --teal-light:#14A79A;
+    --mint:#F3F8F7; --card:#FFFFFF; --coral:#E76F51; --amber:#F2A93B;
+    --slate:#45525B; --slate-light:#8496A0; --border:#E7EEEC; --sidebar-w:250px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Inter',sans-serif; background:var(--mint); color:var(--slate);}
+  a{text-decoration:none; color:inherit;}
+  .sidebar{position:fixed; top:0; left:0; width:var(--sidebar-w); height:100vh; background:linear-gradient(180deg, var(--ink) 0%, var(--ink-2) 100%); color:#fff; display:flex; flex-direction:column; padding:26px 18px; z-index:50;}
+  .brand{display:flex; align-items:center; gap:10px; font-family:'Outfit',sans-serif; font-weight:700; font-size:18px; padding:0 8px 26px;}
+  .brand-mark{width:32px; height:32px; border-radius:9px; background:linear-gradient(135deg, var(--teal-light), var(--teal)); display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+  .nav-section{font-size:11px; text-transform:uppercase; letter-spacing:0.8px; color:rgba(255,255,255,0.35); padding:16px 12px 8px;}
+  .nav-item{display:flex; align-items:center; gap:11px; padding:10px 12px; border-radius:10px; font-size:14px; font-weight:500; color:rgba(255,255,255,0.75); cursor:pointer; margin-bottom:2px;}
+  .nav-item:hover{background:rgba(255,255,255,0.06); color:#fff;}
+  .nav-item.active{background:rgba(20,167,154,0.18); color:#fff; box-shadow:inset 3px 0 0 var(--teal-light);}
+  .sidebar-footer{margin-top:auto; padding:14px 12px; border-top:1px solid rgba(255,255,255,0.08); display:flex; align-items:center; gap:10px;}
+  .avatar-sm{width:34px; height:34px; border-radius:50%; background:linear-gradient(135deg,var(--teal-light),var(--teal)); display:flex; align-items:center; justify-content:center; font-weight:600; font-size:13px; color:#fff;}
+  .sidebar-footer .name{font-size:13px; font-weight:600; color:#fff;}
+  .sidebar-footer .role{font-size:11.5px; color:rgba(255,255,255,0.5); text-transform:capitalize;}
+  .logout-btn{margin-left:auto; cursor:pointer; opacity:0.6;}
+  .logout-btn:hover{opacity:1;}
+
+  .main{margin-left:var(--sidebar-w); padding:28px 36px 60px;}
+  .topbar{display:flex; justify-content:space-between; align-items:center; margin-bottom:22px; flex-wrap:wrap; gap:16px;}
+  .topbar h1{font-family:'Outfit',sans-serif; font-size:25px; font-weight:700; color:var(--ink);}
+
+  .filter-bar{display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap;}
+  .filter-bar select, .filter-bar input{padding:10px 14px; border-radius:10px; border:1.5px solid var(--border); font-size:13.5px; background:#fff; font-family:'Inter',sans-serif;}
+
+  .doctor-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:18px;}
+  .doctor-card{background:var(--card); border-radius:16px; padding:22px; border:1px solid var(--border); box-shadow:0 1px 2px rgba(11,31,46,0.03); transition:transform .15s, box-shadow .15s;}
+  .doctor-card:hover{transform:translateY(-3px); box-shadow:0 16px 32px -16px rgba(11,31,46,0.18);}
+  .doc-header{display:flex; gap:14px; align-items:center; margin-bottom:16px;}
+  .doc-avatar{width:52px; height:52px; border-radius:14px; background:linear-gradient(135deg, var(--teal-light), var(--teal)); display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; font-size:17px; flex-shrink:0;}
+  .doc-name{font-family:'Outfit',sans-serif; font-size:16px; font-weight:600; color:var(--ink);}
+  .doc-spec{font-size:12.5px; color:var(--slate-light); margin-top:2px;}
+  .doc-meta{display:flex; flex-direction:column; gap:8px; font-size:12.5px; color:var(--slate); margin-bottom:14px;}
+  .doc-meta div{display:flex; align-items:center; gap:8px;}
+  .doc-footer{display:flex; justify-content:space-between; align-items:center; padding-top:14px; border-top:1px solid var(--border);}
+  .fee{font-family:'JetBrains Mono',monospace; font-weight:600; color:var(--ink); font-size:14px;}
+  .avail-dot{display:flex; align-items:center; gap:6px; font-size:12px; font-weight:600;}
+  .avail-dot .dot{width:7px; height:7px; border-radius:50%;}
+  .avail-dot.on{color:#0E8074;} .avail-dot.on .dot{background:#0E8074;}
+  .avail-dot.off{color:#B9482E;} .avail-dot.off .dot{background:#E76F51;}
+  .loading-row{padding:60px; text-align:center; color:var(--slate-light); font-size:13.5px; grid-column:1/-1;}
+  @media (max-width: 760px){ .sidebar{display:none;} .main{margin-left:0;} }
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="brand"><div class="brand-mark"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 2L4 6V12C4 17 7.5 21 12 22C16.5 21 20 17 20 12V6L12 2Z" stroke="white" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 8V16M8 12H16" stroke="white" stroke-width="1.6" stroke-linecap="round"/></svg></div>MediCore HMS</div>
+  <div class="nav-section">Overview</div>
+  <a href="admin-dashboard.html"><div class="nav-item"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="7" height="9" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="12" width="7" height="9" rx="2"/><rect x="3" y="16" width="7" height="5" rx="2"/></svg>Dashboard</div></a>
+  <div class="nav-section">Care Management</div>
+  <a href="patients.html"><div class="nav-item"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>Patients</div></a>
+  <div class="nav-item active"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M9 3v4a2 2 0 002 2h2a2 2 0 002-2V3"/><path d="M8 21v-4a4 4 0 018 0v4"/><circle cx="12" cy="13" r="3"/></svg>Doctors</div>
+  <a href="appointments.html"><div class="nav-item"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/></svg>Appointments</div></a>
+  <div class="sidebar-footer">
+    <div class="avatar-sm" id="avatarInitials">--</div>
+    <div><div class="name" id="sidebarName">—</div><div class="role" id="sidebarRole">—</div></div>
+    <div class="logout-btn" id="logoutBtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg></div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="topbar"><h1>Doctors</h1></div>
+
+  <div class="filter-bar">
+    <select id="deptFilter"><option value="">All departments</option></select>
+    <input type="text" id="searchInput" placeholder="Search by name…">
+  </div>
+
+  <div class="doctor-grid" id="doctorGrid">
+    <div class="loading-row">Loading doctors…</div>
+  </div>
+</div>
+
+<script>
+const API_BASE = '/api';
+const token = localStorage.getItem('hms_access_token');
+const userRaw = localStorage.getItem('hms_user');
+if (!token || !userRaw) window.location.href = 'login.html';
+const user = JSON.parse(userRaw || '{}');
+
+document.getElementById('sidebarName').textContent = user.full_name || '—';
+document.getElementById('sidebarRole').textContent = user.role || '—';
+document.getElementById('avatarInitials').textContent = ((user.first_name||' ')[0] + (user.last_name||' ')[0]).toUpperCase();
+
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+  try { await fetch(`${API_BASE}/auth/logout`, { method:'POST', headers:{ 'Authorization':`Bearer ${token}` } }); } catch(e){}
+  localStorage.clear();
+  window.location.href = 'login.html';
+});
+
+async function apiFetch(path) {
+  const res = await fetch(`${API_BASE}${path}`, { headers:{ 'Authorization':`Bearer ${token}` } });
+  if (res.status === 401) { localStorage.clear(); window.location.href = 'login.html'; return; }
+  return res.json();
+}
+
+async function loadDepartments() {
+  const depts = await apiFetch('/admin/departments');
+  const select = document.getElementById('deptFilter');
+  (depts || []).forEach(d => {
+    const opt = document.createElement('option');
+    opt.value = d.id; opt.textContent = d.name;
+    select.appendChild(opt);
+  });
+}
+
+function initials(name) {
+  return (name || '').split(' ').map(n => n[0]).join('').toUpperCase().slice(0,2);
+}
+
+async function loadDoctors() {
+  const deptId = document.getElementById('deptFilter').value;
+  const q = document.getElementById('searchInput').value.trim();
+  const params = new URLSearchParams();
+  if (deptId) params.set('department_id', deptId);
+  if (q) params.set('q', q);
+
+  const doctors = await apiFetch(`/doctors?${params.toString()}`);
+  const grid = document.getElementById('doctorGrid');
+
+  if (!doctors || !doctors.length) {
+    grid.innerHTML = `<div class="loading-row">No doctors found.</div>`;
+    return;
+  }
+
+  grid.innerHTML = doctors.map(d => `
+    <div class="doctor-card">
+      <div class="doc-header">
+        <div class="doc-avatar">${initials(d.name)}</div>
+        <div>
+          <div class="doc-name">Dr. ${d.name}</div>
+          <div class="doc-spec">${d.specialization || 'General Practice'}</div>
+        </div>
+      </div>
+      <div class="doc-meta">
+        <div><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8496A0" stroke-width="2"><path d="M4 21V8l8-5 8 5v13"/></svg>${d.department || '—'}</div>
+        <div><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8496A0" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>${d.years_experience || 0} yrs experience</div>
+      </div>
+      <div class="doc-footer">
+        <div class="fee">$${(d.consultation_fee || 0).toFixed(2)}</div>
+        <div class="avail-dot ${d.is_available ? 'on' : 'off'}"><span class="dot"></span>${d.is_available ? 'Available' : 'Unavailable'}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+document.getElementById('deptFilter').addEventListener('change', loadDoctors);
+let searchTimer;
+document.getElementById('searchInput').addEventListener('input', () => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(loadDoctors, 300);
+});
+
+loadDepartments().then(loadDoctors);
+</script>
+</body>
+</html>

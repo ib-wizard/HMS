@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Appointments · MediCore HMS</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0B1F2E; --ink-2:#122E42; --teal:#0E8074; --teal-light:#14A79A;
+    --mint:#F3F8F7; --card:#FFFFFF; --coral:#E76F51; --amber:#F2A93B;
+    --slate:#45525B; --slate-light:#8496A0; --border:#E7EEEC; --sidebar-w:250px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Inter',sans-serif; background:var(--mint); color:var(--slate);}
+  a{text-decoration:none; color:inherit;}
+  .sidebar{position:fixed; top:0; left:0; width:var(--sidebar-w); height:100vh; background:linear-gradient(180deg, var(--ink) 0%, var(--ink-2) 100%); color:#fff; display:flex; flex-direction:column; padding:26px 18px; z-index:50;}
+  .brand{display:flex; align-items:center; gap:10px; font-family:'Outfit',sans-serif; font-weight:700; font-size:18px; padding:0 8px 26px;}
+  .brand-mark{width:32px; height:32px; border-radius:9px; background:linear-gradient(135deg, var(--teal-light), var(--teal)); display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+  .nav-section{font-size:11px; text-transform:uppercase; letter-spacing:0.8px; color:rgba(255,255,255,0.35); padding:16px 12px 8px;}
+  .nav-item{display:flex; align-items:center; gap:11px; padding:10px 12px; border-radius:10px; font-size:14px; font-weight:500; color:rgba(255,255,255,0.75); cursor:pointer; margin-bottom:2px;}
+  .nav-item:hover{background:rgba(255,255,255,0.06); color:#fff;}
+  .nav-item.active{background:rgba(20,167,154,0.18); color:#fff; box-shadow:inset 3px 0 0 var(--teal-light);}
+  .sidebar-footer{margin-top:auto; padding:14px 12px; border-top:1px solid rgba(255,255,255,0.08); display:flex; align-items:center; gap:10px;}
+  .avatar-sm{width:34px; height:34px; border-radius:50%; background:linear-gradient(135deg,var(--teal-light),var(--teal)); display:flex; align-items:center; justify-content:center; font-weight:600; font-size:13px; color:#fff;}
+  .sidebar-footer .name{font-size:13px; font-weight:600; color:#fff;}
+  .sidebar-footer .role{font-size:11.5px; color:rgba(255,255,255,0.5); text-transform:capitalize;}
+  .logout-btn{margin-left:auto; cursor:pointer; opacity:0.6;}
+  .logout-btn:hover{opacity:1;}
+
+  .main{margin-left:var(--sidebar-w); padding:28px 36px 60px;}
+  .topbar{display:flex; justify-content:space-between; align-items:center; margin-bottom:22px; flex-wrap:wrap; gap:16px;}
+  .topbar h1{font-family:'Outfit',sans-serif; font-size:25px; font-weight:700; color:var(--ink);}
+  .btn-primary{padding:11px 20px; border:none; border-radius:10px; background:linear-gradient(135deg,var(--teal-light),var(--teal)); color:#fff; font-weight:600; font-size:13.5px; cursor:pointer; display:flex; align-items:center; gap:7px; box-shadow:0 8px 18px -8px rgba(14,128,116,0.5);}
+
+  .filter-bar{display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap;}
+  .filter-bar select, .filter-bar input{padding:10px 14px; border-radius:10px; border:1.5px solid var(--border); font-size:13.5px; background:#fff; font-family:'Inter',sans-serif;}
+
+  .panel{background:var(--card); border-radius:16px; border:1px solid var(--border); box-shadow:0 1px 2px rgba(11,31,46,0.03); overflow:hidden;}
+  table{width:100%; border-collapse:collapse;}
+  thead th{text-align:left; font-size:11.5px; text-transform:uppercase; letter-spacing:0.4px; color:var(--slate-light); padding:14px 20px; border-bottom:1px solid var(--border); background:#fafcfc;}
+  tbody td{padding:15px 20px; font-size:13.5px; border-bottom:1px solid var(--border); color:var(--ink);}
+  tbody tr:last-child td{border-bottom:none;}
+  .status-badge{padding:5px 12px; border-radius:20px; font-size:11.5px; font-weight:600; text-transform:capitalize;}
+  .queue-num{font-family:'JetBrains Mono',monospace; font-weight:600; color:var(--teal);}
+  .actions{display:flex; gap:8px;}
+  .action-btn{padding:6px 12px; border-radius:8px; border:1.5px solid var(--border); background:#fff; font-size:12px; font-weight:600; cursor:pointer; color:var(--slate);}
+  .action-btn.danger{color:#B9482E; border-color:rgba(231,111,81,0.3);}
+  .action-btn:hover{background:var(--mint);}
+  .loading-row{padding:60px; text-align:center; color:var(--slate-light); font-size:13.5px;}
+
+  .modal-overlay{position:fixed; inset:0; background:rgba(11,31,46,0.5); display:none; align-items:center; justify-content:center; z-index:100; padding:20px;}
+  .modal-overlay.show{display:flex;}
+  .modal{background:#fff; border-radius:18px; width:100%; max-width:480px; padding:30px 32px;}
+  .modal h3{font-family:'Outfit',sans-serif; font-size:20px; color:var(--ink); margin-bottom:20px;}
+  .modal label{display:block; font-size:12.5px; font-weight:600; color:var(--ink); margin-bottom:6px; margin-top:14px;}
+  .modal label:first-of-type{margin-top:0;}
+  .modal input, .modal select{width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:9px; font-size:13.5px; background:#fbfdfd;}
+  .slots-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:8px; max-height:160px; overflow-y:auto;}
+  .slot-btn{padding:8px; border-radius:8px; border:1.5px solid var(--border); background:#fff; font-size:12px; cursor:pointer; text-align:center; font-family:'JetBrains Mono',monospace;}
+  .slot-btn.taken{opacity:0.3; cursor:not-allowed; text-decoration:line-through;}
+  .slot-btn.selected{background:var(--teal); color:#fff; border-color:var(--teal);}
+  .modal-actions{display:flex; justify-content:flex-end; gap:10px; margin-top:24px;}
+  .btn-ghost{padding:11px 18px; border-radius:10px; border:1.5px solid var(--border); background:#fff; font-weight:600; font-size:13.5px; cursor:pointer; color:var(--slate);}
+  .alert-inline{padding:10px 14px; border-radius:9px; font-size:12.5px; margin-bottom:14px; display:none; background:rgba(231,111,81,0.1); color:#B9482E;}
+  .alert-inline.show{display:block;}
+  @media (max-width: 760px){ .sidebar{display:none;} .main{margin-left:0;} }
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="brand"><div class="brand-mark"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 2L4 6V12C4 17 7.5 21 12 22C16.5 21 20 17 20 12V6L12 2Z" stroke="white" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 8V16M8 12H16" stroke="white" stroke-width="1.6" stroke-linecap="round"/></svg></div>MediCore HMS</div>
+  <div class="nav-section">Overview</div>
+  <a href="admin-dashboard.html"><div class="nav-item"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="7" height="9" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="12" width="7" height="9" rx="2"/><rect x="3" y="16" width="7" height="5" rx="2"/></svg>Dashboard</div></a>
+  <div class="nav-section">Care Management</div>
+  <a href="patients.html"><div class="nav-item"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>Patients</div></a>
+  <a href="doctors.html"><div class="nav-item"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M9 3v4a2 2 0 002 2h2a2 2 0 002-2V3"/><path d="M8 21v-4a4 4 0 018 0v4"/><circle cx="12" cy="13" r="3"/></svg>Doctors</div></a>
+  <div class="nav-item active"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/></svg>Appointments</div>
+  <div class="sidebar-footer">
+    <div class="avatar-sm" id="avatarInitials">--</div>
+    <div><div class="name" id="sidebarName">—</div><div class="role" id="sidebarRole">—</div></div>
+    <div class="logout-btn" id="logoutBtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg></div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="topbar">
+    <h1>Appointments</h1>
+    <button class="btn-primary" id="newApptBtn">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>
+      Book Appointment
+    </button>
+  </div>
+
+  <div class="filter-bar">
+    <input type="date" id="dateFilter">
+    <select id="statusFilter">
+      <option value="">All statuses</option>
+      <option value="scheduled">Scheduled</option>
+      <option value="confirmed">Confirmed</option>
+      <option value="checked_in">Checked in</option>
+      <option value="in_progress">In progress</option>
+      <option value="completed">Completed</option>
+      <option value="cancelled">Cancelled</option>
+      <option value="no_show">No show</option>
+    </select>
+  </div>
+
+  <div class="panel">
+    <table>
+      <thead><tr><th>#</th><th>Patient</th><th>Doctor</th><th>Time</th><th>Reason</th><th>Status</th><th>Actions</th></tr></thead>
+      <tbody id="apptTableBody"><tr><td colspan="7"><div class="loading-row">Loading appointments…</div></td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h3>Book appointment</h3>
+    <div class="alert-inline" id="formAlert"></div>
+    <form id="apptForm">
+      <label>Patient</label>
+      <select id="patientSelect" required><option value="">Loading patients…</option></select>
+
+      <label>Doctor</label>
+      <select id="doctorSelect" required><option value="">Loading doctors…</option></select>
+
+      <label>Date</label>
+      <input type="date" id="apptDate" required>
+
+      <label>Available time slots</label>
+      <div class="slots-grid" id="slotsGrid"><div style="grid-column:1/-1; font-size:12.5px; color:#8496A0;">Select a doctor and date first.</div></div>
+
+      <label>Reason for visit</label>
+      <input type="text" id="reason" placeholder="e.g. Routine checkup">
+
+      <div class="modal-actions">
+        <button type="button" class="btn-ghost" id="cancelModalBtn">Cancel</button>
+        <button type="submit" class="btn-primary">Confirm booking</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+const API_BASE = '/api';
+const token = localStorage.getItem('hms_access_token');
+const userRaw = localStorage.getItem('hms_user');
+if (!token || !userRaw) window.location.href = 'login.html';
+const user = JSON.parse(userRaw || '{}');
+
+document.getElementById('sidebarName').textContent = user.full_name || '—';
+document.getElementById('sidebarRole').textContent = user.role || '—';
+document.getElementById('avatarInitials').textContent = ((user.first_name||' ')[0] + (user.last_name||' ')[0]).toUpperCase();
+
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+  try { await fetch(`${API_BASE}/auth/logout`, { method:'POST', headers:{ 'Authorization':`Bearer ${token}` } }); } catch(e){}
+  localStorage.clear();
+  window.location.href = 'login.html';
+});
+
+async function apiFetch(path, options = {}) {
+  const res = await fetch(`${API_BASE}${path}`, {
+    ...options,
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`, ...(options.headers||{}) }
+  });
+  if (res.status === 401) { localStorage.clear(); window.location.href = 'login.html'; return; }
+  return res;
+}
+
+const STATUS_COLORS = {
+  scheduled:{bg:'rgba(132,150,160,0.15)', fg:'#45525B'},
+  confirmed:{bg:'rgba(20,167,154,0.15)', fg:'#0E8074'},
+  checked_in:{bg:'rgba(242,169,59,0.18)', fg:'#96650E'},
+  in_progress:{bg:'rgba(14,128,116,0.18)', fg:'#0E8074'},
+  completed:{bg:'rgba(11,31,46,0.1)', fg:'#0B1F2E'},
+  cancelled:{bg:'rgba(231,111,81,0.15)', fg:'#B9482E'},
+  no_show:{bg:'rgba(185,72,46,0.15)', fg:'#B9482E'},
+};
+
+async function loadAppointments() {
+  const date = document.getElementById('dateFilter').value;
+  const status = document.getElementById('statusFilter').value;
+  const params = new URLSearchParams();
+  if (date) params.set('date', date);
+  if (status) params.set('status', status);
+  params.set('per_page', '50');
+
+  const res = await apiFetch(`/appointments?${params.toString()}`);
+  if (!res) return;
+  const data = await res.json();
+  const tbody = document.getElementById('apptTableBody');
+
+  if (!data.appointments.length) {
+    tbody.innerHTML = `<tr><td colspan="7"><div class="loading-row">No appointments found for these filters.</div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = data.appointments.map(a => {
+    const c = STATUS_COLORS[a.status] || STATUS_COLORS.scheduled;
+    const time = new Date(a.scheduled_at).toLocaleString('en-US', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+    const canCancel = !['cancelled','completed','no_show'].includes(a.status);
+    return `
+      <tr>
+        <td class="queue-num">${a.queue_number ?? '—'}</td>
+        <td><strong>${a.patient_name}</strong></td>
+        <td>Dr. ${a.doctor_name}</td>
+        <td>${time}</td>
+        <td>${a.reason || '—'}</td>
+        <td><span class="status-badge" style="background:${c.bg}; color:${c.fg}">${a.status.replace('_',' ')}</span></td>
+        <td class="actions">
+          ${canCancel ? `<button class="action-btn danger" onclick="cancelAppt('${a.id}')">Cancel</button>` : ''}
+        </td>
+      </tr>`;
+  }).join('');
+}
+
+async function cancelAppt(id) {
+  if (!confirm('Cancel this appointment?')) return;
+  const res = await apiFetch(`/appointments/${id}/cancel`, { method:'POST', body: JSON.stringify({ reason:'Cancelled from dashboard' }) });
+  if (res && res.ok) loadAppointments();
+}
+
+document.getElementById('dateFilter').addEventListener('change', loadAppointments);
+document.getElementById('statusFilter').addEventListener('change', loadAppointments);
+
+// ---------------- Booking modal ----------------
+const overlay = document.getElementById('modalOverlay');
+document.getElementById('newApptBtn').addEventListener('click', async () => {
+  overlay.classList.add('show');
+  await Promise.all([loadPatientOptions(), loadDoctorOptions()]);
+});
+document.getElementById('cancelModalBtn').addEventListener('click', () => overlay.classList.remove('show'));
+overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.classList.remove('show'); });
+
+async function loadPatientOptions() {
+  const res = await apiFetch('/patients?per_page=100');
+  const data = await res.json();
+  const select = document.getElementById('patientSelect');
+  select.innerHTML = '<option value="">Select patient…</option>' + data.patients.map(p => `<option value="${p.id}">${p.full_name} (${p.patient_code})</option>`).join('');
+}
+
+async function loadDoctorOptions() {
+  const res = await apiFetch('/doctors');
+  const doctors = await res.json();
+  const select = document.getElementById('doctorSelect');
+  select.innerHTML = '<option value="">Select doctor…</option>' + doctors.map(d => `<option value="${d.id}">Dr. ${d.name} — ${d.department}</option>`).join('');
+}
+
+let selectedSlot = null;
+async function loadSlots() {
+  const doctorId = document.getElementById('doctorSelect').value;
+  const date = document.getElementById('apptDate').value;
+  const grid = document.getElementById('slotsGrid');
+  selectedSlot = null;
+  if (!doctorId || !date) {
+    grid.innerHTML = '<div style="grid-column:1/-1; font-size:12.5px; color:#8496A0;">Select a doctor and date first.</div>';
+    return;
+  }
+  grid.innerHTML = '<div style="grid-column:1/-1; font-size:12.5px; color:#8496A0;">Loading slots…</div>';
+  const res = await apiFetch(`/appointments/available-slots?doctor_id=${doctorId}&date=${date}`);
+  const data = await res.json();
+  if (!data.slots || !data.slots.length) {
+    grid.innerHTML = `<div style="grid-column:1/-1; font-size:12.5px; color:#8496A0;">${data.message || 'No slots available.'}</div>`;
+    return;
+  }
+  grid.innerHTML = data.slots.map(s => `
+    <button type="button" class="slot-btn ${s.available ? '' : 'taken'}" data-time="${s.time}" ${s.available ? '' : 'disabled'}>${s.time}</button>
+  `).join('');
+  grid.querySelectorAll('.slot-btn:not(.taken)').forEach(btn => {
+    btn.addEventListener('click', () => {
+      grid.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      selectedSlot = btn.dataset.time;
+    });
+  });
+}
+document.getElementById('doctorSelect').addEventListener('change', loadSlots);
+document.getElementById('apptDate').addEventListener('change', loadSlots);
+
+document.getElementById('apptForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const alertBox = document.getElementById('formAlert');
+  alertBox.classList.remove('show');
+
+  const patientId = document.getElementById('patientSelect').value;
+  const doctorId = document.getElementById('doctorSelect').value;
+  const date = document.getElementById('apptDate').value;
+
+  if (!patientId || !doctorId || !date || !selectedSlot) {
+    alertBox.textContent = 'Please select patient, doctor, date, and a time slot.';
+    alertBox.classList.add('show');
+    return;
+  }
+
+  const scheduled_at = `${date}T${selectedSlot}:00`;
+  const res = await apiFetch('/appointments', {
+    method:'POST',
+    body: JSON.stringify({ patient_id:patientId, doctor_id:doctorId, scheduled_at, reason: document.getElementById('reason').value })
+  });
+  const data = await res.json();
+
+  if (!res.ok) {
+    alertBox.textContent = data.message || 'Unable to book appointment';
+    alertBox.classList.add('show');
+    return;
+  }
+
+  overlay.classList.remove('show');
+  document.getElementById('apptForm').reset();
+  loadAppointments();
+});
+
+loadAppointments();
+</script>
+</body>
+</html>

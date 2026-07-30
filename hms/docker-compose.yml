@@ -1,0 +1,44 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: hms_user
+      POSTGRES_PASSWORD: hms_password
+      POSTGRES_DB: hms_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - hms_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hms_user -d hms_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  web:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      FLASK_ENV: production
+      DATABASE_URL: postgresql://hms_user:hms_password@db:5432/hms_db
+      SECRET_KEY: ${SECRET_KEY:-dev-secret-key-change-me}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-dev-jwt-secret-change-me}
+      DEFAULT_ADMIN_EMAIL: ${DEFAULT_ADMIN_EMAIL:-admin@hospital.com}
+      DEFAULT_ADMIN_PASSWORD: ${DEFAULT_ADMIN_PASSWORD:-ChangeMe123!}
+      CORS_ORIGINS: http://localhost:5000
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./app/uploads:/app/app/uploads
+      - ./logs:/app/logs
+    command: >
+      sh -c "flask db upgrade && flask seed-db && gunicorn -c gunicorn_config.py run:app"
+
+volumes:
+  hms_pgdata:
