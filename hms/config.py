@@ -25,11 +25,25 @@ class Config:
     SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-key-change-me")
 
     # Database
-    SQLALCHEMY_DATABASE_URI = os.environ.get(
-        "DATABASE_URL", "postgresql://hms_user:hms_password@localhost:5432/hms_db"
-    )
+    # NOTE: no localhost fallback here on purpose. If DATABASE_URL is missing
+    # in production, we want a loud, immediate error at startup - not a silent
+    # connection attempt to localhost that fails deep inside SQLAlchemy.
+    SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL")
+    if not SQLALCHEMY_DATABASE_URI:
+        if os.environ.get("FLASK_ENV") == "development":
+            # Local dev only: safe to fall back to a local Postgres instance.
+            SQLALCHEMY_DATABASE_URI = (
+                "postgresql://hms_user:hms_password@localhost:5432/hms_db"
+            )
+        else:
+            raise RuntimeError(
+                "DATABASE_URL environment variable is not set. "
+                "Set it in your Render service's Environment tab to the "
+                "External Database URL of your Postgres instance."
+            )
+
     # Render/Heroku sometimes provide "postgres://" - SQLAlchemy 2.x needs "postgresql://"
-    if SQLALCHEMY_DATABASE_URI and SQLALCHEMY_DATABASE_URI.startswith("postgres://"):
+    if SQLALCHEMY_DATABASE_URI.startswith("postgres://"):
         SQLALCHEMY_DATABASE_URI = SQLALCHEMY_DATABASE_URI.replace(
             "postgres://", "postgresql://", 1
         )
